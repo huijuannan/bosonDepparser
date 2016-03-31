@@ -9,12 +9,13 @@
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="tree.css"> -->
 <script type="text/javascript" src="components/d3/d3.js"></script>
-<script type="text/javascript" src="dependency-tree.js"></script>
+<script type="text/javascript" src="depend-tree.js"></script>
 
 <div class="container">
-<h2>نمایش درخت تجزیه وابستگی</h2>
 <div class="tree">
-    <svg height="0"></svg>
+    <svg height="0">
+        
+    </svg>
 </div>
 <textarea id="data" class="form-control">
 1	از	_	PREP	PREP	_	12	VPP	_	_
@@ -34,10 +35,16 @@
 <button id="draw" class="btn btn-default">نمایش</button>
 </div>
 <script type="text/javascript">
-    d3.select('#draw').on('click', function() {
-        drawTree('.tree svg', d3.select('#data')[0][0].value, false);
-    });
-    d3.select('#draw').on('click')();
+    var word = ["涓涓","的","细流","，","可以","汇成","壮阔","的","大海","；","平凡","的","脚步","，","可以","走完","伟大","的","行程"];
+    var role = ["DEG","NMOD","SBJ","PU","DEC","VMOD","OBJ","NMOD","VMOD","PU","DEG","NMOD","SBJ","PU","ROOT","VMOD","DEC","NMOD","OBJ"];
+    var head = [1,2,4,4,7,4,5,8,14,14,11,12,14,14,-1,14,17,18,15];
+    var data = [];
+    for (var i=0; i<word.length; i++){
+        data.push({'id':i+1, 'word':word[i],'parent':head[i]+1,'dependency':role[i],'level':1});
+    }
+    
+    drawTree('.tree svg', data, false);
+    
 </script>
 </body>
 </html>

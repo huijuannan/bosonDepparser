@@ -24,6 +24,7 @@ window.drawTree = function(svgElement, conllData) {
     }
     return _results;
   })();
+  console.log(edges);
   for (_i = 0, _len = edges.length; _i < _len; _i++) {
     edge = edges[_i];
     for (_j = 0, _len1 = edges.length; _j < _len1; _j++) {
