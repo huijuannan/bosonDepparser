@@ -11,6 +11,8 @@ const nlp = new bosonnlp.BosonNLP(API_KEY);
 const Promise = require('bluebird');
 const readFile = Promise.promisify(require("fs").readFile);
 const writeFile = Promise.promisify(require("fs").writeFile);
+const readDir = Promise.promisify(require("fs").readdir);
+const fs = require("fs");
 // var depparser = Promise.promisify(nlp.depparser, {context: nlp});
 
 // 分句
@@ -25,76 +27,70 @@ function parseSentence(content) {
     });
 }
 
+// var filelist = fs.readdirSync('./article');
+// console.log(filelist);
 
-var role = [],
-    head = [],
-    word =[];
+readDir('./people')
+    .then(function(files){
+        return files.reduce(function(prev,curr){
+            return prev
+                .then(function(){
+                    return bosonParse(curr);
+                });
+        }, Promise.resolve(''));
+    })
+    .catch(function(err){
+        throw err;
+    });
 
-readFile('./text03.txt', 'utf8')
+// bosonParse('text01.txt');
+
+function bosonParse(filename){
+
+    var role = [],
+        head = [],
+        word =[];
+
+
+    return readFile('./people/' + filename, 'utf8')
     .then(function(content){
         console.log(parseSentence(content).length);
         return parseSentence(content);
     })
     .then(function(sentences){
-        return sentences.map(function(sen,index){
-                return new Promise(function(resolve, reject){
-                    nlp.depparser(sen, function(data){
-                        return resolve({
-                            result: JSON.parse(data),
-                            index: index
-                        });
-                    })
-                });
-            })
-    })
-    .then(function(sentences){
-        sentences.reduce(function(prev,curr){
-            prev
-                .then(function(result){
-                    role[result.index] = result.result['0'].role;
-                    head[result.index] = result.result['0'].head;
-                    word[result.index] = result.result['0'].word;
-                })
+        return sentences.reduce(function(prev,curr,index){
+            return prev
                 .then(function(){
-                    setTimeout(function(){
-                        return new Promise(function(resolve, reject){
-                            nlp.depparser(sen, function(data){
-                                return resolve({
-                                    result: JSON.parse(data),
-                                    index: index
-                                });
-                            })
-                        }); 
-                    }, 2000);
+                    // console.log(curr);
+                    return new Promise(function(resolve, reject){
+                        nlp.depparser(curr, function(data){
+                            return resolve(JSON.parse(data));
+                        });
+                    }); 
                 })
-        }, new Promise(function(resolve, reject){
-                nlp.depparser(sentences[0], function(data){
-                    return resolve({
-                        result: JSON.parse(data),
-                        index: index
-                    });
-                })
-            }))
-    })
-
-    .each(function(result,index){
-        console.log(index)
-        role[result.index] = result.result['0'].role;
-        head[result.index] = result.result['0'].head;
-        word[result.index] = result.result['0'].word;
+                .then(function(result){
+                    console.log(index);
+                    console.log(result[0].role);
+                    role.push(result[0].role);
+                    head.push(result[0].head);
+                    word.push(result[0].word);
+                });
+        }, Promise.resolve(''));
     })
     .then(function(){
-        Promise.all(
+        console.log(role);
+        return Promise.all(
             [
-            writeFile('./output/role.json',JSON.stringify(role)),
-            writeFile('./output/head.json',JSON.stringify(head)),
-            writeFile('./output/word.json',JSON.stringify(word))
+            writeFile('./output/' + filename.split('.')[0] + '-role.json',JSON.stringify(role)),
+            writeFile('./output/' + filename.split('.')[0] + '-head.json',JSON.stringify(head)),
+            writeFile('./output/' + filename.split('.')[0] + '-word.json',JSON.stringify(word))
             ]
             )
         .then(function(data){
             console.log(typeof data);
-        })
+        });
     })
     .catch(function(err){
         console.log(err);
-    })
+    });
+}
