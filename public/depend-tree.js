@@ -22,17 +22,52 @@ window.drawTree = function(svgElement, data){
         }
     }
 
+    data.forEach(function(d){
+        d.lines = [];
+        if (d.parent >0){
+            d.levelMark = d.level*(d.parent-d.id)/Math.abs(d.parent-d.id);
+            d.lines.push(d.levelMark);
+        }
+    });
+
+    data.forEach(function(d){
+        if (d.parent >0){
+            data[d.parent-1]['lines'].push(-1 * d.level*(d.parent-d.id)/Math.abs(d.parent-d.id));
+        }
+    });
+
+    data.forEach(function(d){
+        d.lines.sort(function(l1,l2){
+            if (l1 *l2 >0){ 
+                return l2 -l1;
+            }
+            else if (l1 >0 & l2 <0){
+                return 1;
+            }
+            else{ // l1 <0 & l2 >0
+                return -1;
+            }
+        })
+    });
+
     var treeWidth = wordWidth*data.length - wordWidth/3;
     var treeHeight = levelHeight(maximum(data.map(function(e){return e.level;}))) +2*wordHeight;
     for (var i = 0; i<data.length; i++){
         var d = data[i];
-        d.bottom = treeHeight - 1.8 * wordHeight;
-        d.top = d.bottom - levelHeight(d.level);
-        d.left = treeWidth - d.id * wordWidth - 5;
-        d.right = treeWidth - d.parent * wordWidth + 5;
-        d.mid = (d.right + d.left)/2;
-        d.diff = (d.right - d.left)/4;
-        d.arrow = d.top + (d.bottom - d.top)*0.25;
+        if (d.parent >0){
+            var numlines = d.lines.length;
+            var parent = data[d.parent-1];
+
+            d.bottom = treeHeight - 1.8 * wordHeight;
+            d.top = d.bottom - levelHeight(d.level);
+            if (numlines === 1){
+                d.left = d.id * wordWidth;
+            }else{
+                d.left = d.id * wordWidth + (d.lines.indexOf(d.levelMark) - (numlines-1)/2)*5;
+            }
+            d.right = d.parent * wordWidth + (parent.lines.indexOf(-1 * d.levelMark) - (parent.lines.length-1)/2)*5;            
+            d.mid = (d.left + d.right)/2;
+        }
     }
 
     // draw svg
@@ -45,8 +80,8 @@ window.drawTree = function(svgElement, data){
     var arrowMarker = defs.append("marker")  
                         .attr("id","arrow")  
                         .attr("markerUnits","strokeWidth")  
-                        .attr("markerWidth","12")  
-                        .attr("markerHeight","12")  
+                        .attr("markerWidth","6")  
+                        .attr("markerHeight","6")  
                         .attr("viewBox","0 0 12 12")   
                         .attr("refX","6")  
                         .attr("refY","6")  
@@ -64,7 +99,7 @@ window.drawTree = function(svgElement, data){
                 .append('text')
                 .text(function(d){return d.word;})
                 .attr('class', function(d){return 'word w' + d.id;})
-                .attr('x', function(d){return treeWidth - wordWidth*d.id;})
+                .attr('x', function(d){return  wordWidth*d.id;})
                 .attr('y', function(d){return treeHeight - wordHeight;})
                 .attr('text-anchor', 'middle');
 
@@ -105,9 +140,9 @@ window.drawTree = function(svgElement, data){
                             .text(function(d){return d.dependency;})
                             .attr('class', function(d){return "dependency w" + d.id + " w" + d.parent;})
                             .attr('x',function(d){return d.mid;})
-                            .attr('y', function(d){return d.arrow - 7;})
+                            .attr('y', function(d){return d.top - 3;})
                             .attr('text-anchor','middle')
-                            .attr('font-size','90%');
+                            .attr('font-size','80%');
 
 };
 
